@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file seo_toolkit.install
+ *
+ * Install, uninstall and update hooks for the SEO Toolkit module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ *
+ * @return array
+ */
+function seo_toolkit_schema() {
+  return array(
+    'seo_toolkit_log' => array(
+      'description' => 'SEO Toolkit log',
+      'fields' => array(
+        'id' => array(
+          'description' => 'The primary identifier for a log entry.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,),
+        'action' => array(
+          'description' => 'Name of the action performed',
+          'type' => 'varchar',
+          'not null' => TRUE,
+          'length' => 100,
+          'default' => ''),
+        'description' => array(
+          'description' => 'Activity description',
+          'type' => 'varchar',
+          'not null' => TRUE,
+          'length' => 255, ),
+        'timestamp' => array(
+          'description' => 'Unix timestamp of log entry',
+          'type' => 'int',
+          'not null' => TRUE,
+          'length' => 13, ),
+        'uid' => array(
+          'description' => 'User performing action',
+          'type' => 'int',
+          'not null' => TRUE,
+          'length' => 13, ),
+      ),
+      'primary key' => array('id'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function seo_toolkit_install() {
+  drupal_install_schema('seo_toolkit');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function seo_toolkit_uninstall() {
+  drupal_uninstall_schema('seo_toolkit');
+}

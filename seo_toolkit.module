@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * Implementation of hook_menu().
+ */
+function seo_toolkit_menu() {
+  $items['admin/settings/seo-toolkit'] = array(
+    'title' => 'SEO Toolkit',
+    'access arguments' => array('administer seo toolkit'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('seo_toolkit_admin_settings_form'),
+    'file' => 'seo_toolkit.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => -99,
+  );
+
+  $items['admin/settings/seo-toolkit/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['admin/settings/seo-toolkit/import'] = array(
+    'title' => 'Import titles',
+    'description' => 'Import titles',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('seo_toolkit_form'),
+    'access arguments' => array('administer seo toolkit'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'seo_toolkit.admin.inc',
+    'weight' => 7,
+  );
+
+  $items['admin/settings/seo-toolkit/export'] = array(
+    'title' => 'Export titles',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('seo_toolkit_export_form'),
+    'access arguments' => array('administer seo toolkit'),
+    'file' => 'seo_toolkit.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 8,
+  );
+
+  return $items;
+}
+
+function seo_toolkit_perm() {
+  return array('administer seo toolkit', 'receive bacon');
+}
