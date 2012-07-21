@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * File SEO Toolkit admin callback file.
  */
 
@@ -36,8 +37,6 @@ function seo_toolkit_admin_settings_form(&$form_state) {
     '#default_value' => variable_get('seo_toolkit_supported_tags', array()),
     '#description' => t('Enable or disable importable tags.'),
   );
-
-
 
   return system_settings_form($form);
 }
@@ -102,8 +101,6 @@ function seo_toolkit_form(&$form_state) {
  * Validate callback for imports.
  */
 function seo_toolkit_form_validate($form, &$form_state) {
-  // if error
-  // form_set_error('redirect', t('You are attempting to redirect the page to itself. This will result in an infinite loop.'));
   if (empty($_FILES['files']['tmp_name']['source'])) {
     form_set_error('source', t('File is required.'));
   }
@@ -115,16 +112,9 @@ function seo_toolkit_form_validate($form, &$form_state) {
 function seo_toolkit_form_submit($form, &$form_state) {
   global $user;
 
-  // process the file
+  // Process the file.
   $file = $_FILES['files']['tmp_name']['source'];
 
-  // Not implementing this for now.
-  if ($save_imports = FALSE) {
-    $filename = 'seo_toolkit_import.csv';
-    $dest = 'seo_toolkit/import-'. time() .'-'. $filename;
-    file_save_upload($file, array(), file_directory_path() .'/'. $dest, FILE_EXISTS_REPLACE);
-  //  file_save_data($report, $file, FILE_EXISTS_REPLACE);
-  }
   $process = FALSE;
   switch ($form_state['clicked_button']['#value']) {
     case t('Import'):
@@ -141,7 +131,7 @@ function seo_toolkit_form_submit($form, &$form_state) {
 
 
 /**
- * Do the actual file processing
+ * Do the actual file processing.
  */
 function seo_toolkit_process_upload($file, $process = TRUE) {
 
@@ -151,47 +141,35 @@ function seo_toolkit_process_upload($file, $process = TRUE) {
     $to = 1;
     while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
       if ($row == 0) {
-       $header = $data;
-
+        $header = $data;
       }
       else {
         $output[] = $data;
-      }
-
-      // prep for import
-      if ($process) {
-
-      }
-      // prep for display
-      else {
-
       }
       $row++;
     }
     fclose($handle);
   }
 
-  // process data
+  // Process data.
   if ($process) {
     $msg = seo_toolkit_process_import($output);
     drupal_set_message($msg['error'], $msg['status']);
   }
-  // display as table
+  // Display as table.
   else {
     drupal_add_js('misc/collapse.js');
     return theme('fieldset', array(
       '#title' => t('Results'),
-//      '#value' => theme('table', $header, $output),
       '#value' => seo_toolkit_process_import_test($output),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     ));
   }
-
 }
 
 /**
- * function to process an array of url aliases
+ * Process an array of url aliases.
  */
 function seo_toolkit_process_import_test($imports) {
   if (empty($imports)) {
@@ -208,10 +186,12 @@ function seo_toolkit_process_import_test($imports) {
   foreach ($imports as $index => $import) {
     $node = node_load($import[0], NULL, TRUE);
     $title = trim($import[1]);
+
     // Check for duplicate import entries.
     $dups[$node->nid]++;
     $action = '';
     $title = trim($import[1]);
+
     // Node doesn't exist or title is blank.
     if (!$node) {
       // @TODO add error/notification.
@@ -233,7 +213,6 @@ function seo_toolkit_process_import_test($imports) {
       $status['imports']++;
       $action = 'import';
     }
-
 
     $page_title['nid'] = $action == 'missing' ? $import[0] : $node->nid;
     $page_title['type'] = 'node';
@@ -277,7 +256,7 @@ function seo_toolkit_process_import_test($imports) {
 }
 
 /**
- * function to process an array of url aliases
+ * Process an array of url aliases.
  */
 function seo_toolkit_process_import($imports) {
   if (empty($imports)) {
@@ -319,7 +298,8 @@ function seo_toolkit_process_import($imports) {
     if ($title != '') {
       try {
         $page_title->page_title = check_plain($title);
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
         drupal_set_message('Error on node ' . $import[0] . ' row ' . $index);
       }
     }
@@ -350,15 +330,15 @@ function seo_toolkit_process_import($imports) {
   $message .= 'Items missing: ' . count($status['missing']) .'<br />';
   $message .= 'Duplicate items: ' . $dup_count .'<br />';
   drupal_set_message($message . $duplicates . $missing_items);
-//  page_title_load_title($node->nid, 'node')
 }
 
-
+/**
+ * Callback for export settings form.
+ */
 function seo_toolkit_export_form(&$form_state) {
   $form['export'] = array(
     '#type' => 'fieldset',
     '#title' => t('Export settings'),
-    '#description' => t('idk yet.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
@@ -410,8 +390,6 @@ function seo_toolkit_export_form_submit($form, &$form_state) {
   echo $report;
   exit;
 }
-
-/* ************************ NODEWORDS STUFF ************************** */
 
 /**
  * Form callback for title tag CSV import.
@@ -500,8 +478,6 @@ function seo_toolkit_nodewords_form(&$form_state) {
  * Validate callback for imports.
  */
 function seo_toolkit_nodewords_form_validate($form, &$form_state) {
-  // if error
-  // form_set_error('redirect', t('You are attempting to redirect the page to itself. This will result in an infinite loop.'));
   if (empty($_FILES['files']['tmp_name']['source']) && trim($form_state['values']['path']) == '') {
     form_set_error('source', t('File is required.'));
   }
@@ -517,17 +493,10 @@ function seo_toolkit_nodewords_form_submit($form, &$form_state) {
     $file = $_SERVER['DOCUMENT_ROOT'] . '/sites/default/files/' . $form_state['values']['path'];
   }
   else {
-    // process the file
+    // Process the file.
     $file = $_FILES['files']['tmp_name']['source'];
   }
 
-  // Not implementing this for now.
-  if ($save_imports = FALSE) {
-    $filename = 'seo_toolkit_import.csv';
-    $dest = 'seo_toolkit/import-'. time() .'-'. $filename;
-    file_save_upload($file, array(), file_directory_path() .'/'. $dest, FILE_EXISTS_REPLACE);
-  //  file_save_data($report, $file, FILE_EXISTS_REPLACE);
-  }
   $process = FALSE;
   switch ($form_state['clicked_button']['#value']) {
     case t('Import'):
@@ -541,7 +510,6 @@ function seo_toolkit_nodewords_form_submit($form, &$form_state) {
   drupal_set_message($output);
   seo_toolkit_log('import', $user->uid, check_plain($form_state['values']['description']));
 }
-
 
 /**
  * Do the actual file processing
@@ -559,15 +527,6 @@ function seo_toolkit_process_nodewords_upload($file, $process = TRUE, $form_stat
       else {
         $output[] = $data;
       }
-
-      // prep for import
-      if ($process) {
-
-      }
-      // prep for display
-      else {
-
-      }
       $row++;
     }
     fclose($handle);
@@ -583,7 +542,6 @@ function seo_toolkit_process_nodewords_upload($file, $process = TRUE, $form_stat
     drupal_add_js('misc/collapse.js');
     return theme('fieldset', array(
       '#title' => t('Test results'),
-//      '#value' => theme('table', $header, $output),
       '#value' => seo_toolkit_process_nodewords_import($output, $header, $form_state, TRUE),
       '#collapsible' => FALSE,
       '#collapsed' => FALSE,
@@ -593,7 +551,7 @@ function seo_toolkit_process_nodewords_upload($file, $process = TRUE, $form_stat
 }
 
 /**
- * function to process an array of url aliases
+ * Process an array of url aliases.
  */
 function seo_toolkit_process_nodewords_import($imports, $header, $form_state, $test = FALSE) {
 
@@ -642,7 +600,6 @@ function seo_toolkit_process_nodewords_import($imports, $header, $form_state, $t
 
     // Check for duplicate import entries.
     $dups[$node->nid]++;
-
   }
 
   $dup_count = 0;
@@ -668,8 +625,9 @@ function seo_toolkit_process_nodewords_import($imports, $header, $form_state, $t
   }
 }
 
-
-
+/**
+ * Log each transaction.
+ */
 function seo_toolkit_log($action, $uid, $description) {
   $seo_toolkit = new stdClass();
 
@@ -681,17 +639,9 @@ function seo_toolkit_log($action, $uid, $description) {
   return drupal_write_record('seo_toolkit_log', $seo_toolkit);
 }
 
-
-function seo_toolkit_options() {
-  $options = array(0 => t('None'));
-  $result = db_query('SELECT * FROM {seo_toolkit} ORDER BY rid ASC');
-  while ($row = db_fetch_array($result)) {
-    $options[$row['rid']] = strtoupper($row['rollback_type']) .': '. check_plain($row['description']) .' <em>('. date("F j, Y, g:i a", $row['timestamp']) .')</em>';
-  }
-
-  return $options;
-}
-
+/**
+ * Use fgetcsv with a string instead of a file handle.
+ */
 function array_to_CSV($data) {
   $outstream = fopen("php://temp", 'r+');
   fputcsv($outstream, $data, ',', '"');
@@ -701,6 +651,10 @@ function array_to_CSV($data) {
   return $csv;
 }
 
+/**
+ * Use fputcsv to convert an array to a string instead of writing to a file
+ * handle.
+ */
 function CSV_to_array($data) {
   $instream = fopen("php://temp", 'r+');
   fwrite($instream, $data);

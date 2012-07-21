@@ -1,9 +1,9 @@
 <?php
 
 /**
-* File SEO Toolkit export view.
-*/
-
+ * @file
+ * File SEO Toolkit export view.
+ */
 
 /**
  * Implements hook_views_default_views().
@@ -121,9 +121,9 @@ function seo_toolkit_views_default_views() {
       'empty_zero' => 0,
       'hide_alter_empty' => 1,
       'value' => '<?php
-  $page_title = page_title_load_title($data->nid, \'node\');
-  return $page_title;
-  ?>',
+    $page_title = page_title_load_title($data->nid, \'node\');
+    return $page_title;
+    ?>',
       'exclude' => 0,
       'id' => 'phpcode_1',
       'table' => 'customfield',
@@ -160,9 +160,9 @@ function seo_toolkit_views_default_views() {
       'empty_zero' => 0,
       'hide_alter_empty' => 1,
       'value' => '<?php
-  $nodewords = nodewords_load_tags(NODEWORDS_TYPE_NODE, $data->nid);
-  return trim($nodewords[\'keywords\'][\'value\']);
-  ?>',
+    $nodewords = nodewords_load_tags(NODEWORDS_TYPE_NODE, $data->nid);
+    return trim($nodewords[\'keywords\'][\'value\']);
+    ?>',
       'exclude' => 0,
       'id' => 'phpcode_2',
       'table' => 'customfield',
@@ -199,9 +199,9 @@ function seo_toolkit_views_default_views() {
       'empty_zero' => 0,
       'hide_alter_empty' => 1,
       'value' => '<?php
-  $nodewords = nodewords_load_tags(NODEWORDS_TYPE_NODE, $data->nid);
-  return trim($nodewords[\'description\'][\'value\']);
-  ?>',
+    $nodewords = nodewords_load_tags(NODEWORDS_TYPE_NODE, $data->nid);
+    return trim($nodewords[\'description\'][\'value\']);
+    ?>',
       'exclude' => 0,
       'id' => 'phpcode',
       'table' => 'customfield',
@@ -218,6 +218,7 @@ function seo_toolkit_views_default_views() {
   $handler->override_option('cache', array(
     'type' => 'none',
   ));
+  $handler->override_option('items_per_page', 100);
   $handler->override_option('style_plugin', 'table');
   $handler->override_option('style_options', array(
     'grouping' => '',
@@ -262,6 +263,7 @@ function seo_toolkit_views_default_views() {
     'name' => 'navigation',
   ));
   $handler = $view->new_display('feed', 'Feed', 'feed_1');
+  $handler->override_option('items_per_page', 0);
   $handler->override_option('style_plugin', 'views_csv');
   $handler->override_option('style_options', array(
     'mission_description' => FALSE,
