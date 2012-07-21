@@ -3,3 +3,5 @@ description = "Adds import, update and export functionality SEO stuff."
 core = 6.x
 package = Custom
 dependencies[] = page_title
+dependencies[] = views_customfield
+dependencies[] = views_bonus_export

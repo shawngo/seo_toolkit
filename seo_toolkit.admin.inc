@@ -1,28 +1,43 @@
 <?php
 
 /**
- * File SEO Toolkit admin callback file
+ * File SEO Toolkit admin callback file.
  */
 
 /**
- * Implementation of hook_admin_settings() for configuring the module
+ * Implements hook_admin_settings().
  */
 function seo_toolkit_admin_settings_form(&$form_state) {
-  // Link specific configurations.
   $form['general_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('General Settings'),
-    '#description' => t('Settings go here...'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
 
-  $form['general_settings']['seo_toolkit_setting'] = array(
-    '#type' => 'textfield',
-    '#title' => t('No settings like home'),
-    '#default_value' => variable_get('seo_toolkit_setting', 'This setting doesn\'t do anything'),
-    '#description' => t('Nothing, this setting does.')
+  $excluded = array(
+    'dc.date',
+    'dc.publisher',
+    'location',
+    'shorturl',
+    'robots',
   );
+
+  foreach (nodewords_get_possible_tags() as $tag => $tag_info) {
+    if (!in_array($tag, $excluded)) {
+      $options[$tag] = $tag_info['label'];
+    }
+  }
+
+  $form['general_settings']['seo_toolkit_supported_tags'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Supported meta tags'),
+    '#options' => $options,
+    '#default_value' => variable_get('seo_toolkit_supported_tags', array()),
+    '#description' => t('Enable or disable importable tags.'),
+  );
+
+
 
   return system_settings_form($form);
 }
@@ -367,7 +382,6 @@ function seo_toolkit_export_form(&$form_state) {
  */
 function seo_toolkit_export_form_submit($form, &$form_state) {
 
-
   $filename = 'seo_toolkit_export.csv';
   drupal_set_header('Content-Type: text/csv');
   drupal_set_header('Content-Disposition: attachment; filename=' . $filename);
@@ -396,6 +410,265 @@ function seo_toolkit_export_form_submit($form, &$form_state) {
   echo $report;
   exit;
 }
+
+/* ************************ NODEWORDS STUFF ************************** */
+
+/**
+ * Form callback for title tag CSV import.
+ */
+function seo_toolkit_nodewords_form(&$form_state) {
+  global $user;
+  drupal_set_title('Nodewords importer');
+
+  $form = array();
+  $form['#attributes'] = array('enctype' => "multipart/form-data");
+
+  $form['import'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Import settings'),
+    '#description' => t('Adhere to all the rules.'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['import']['description'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Description of import'),
+    '#description' => t('Used to identify each action'),
+    '#default_value' => 'Importing nodewords - ' . $user->name,
+    '#required' => TRUE,
+  );
+
+  $form['file_import'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('File upload'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  foreach (variable_get('seo_toolkit_supported_tags', array()) as $tag => $enabled) {
+    if ($enabled) {
+      $tags .= ',meta_' . $tag;
+      $tag_words .= ',"Meta ' . $tag . '"';
+    }
+  }
+
+  $form['file_import']['instructions'] = array(
+    '#type' => 'markup',
+    '#title' => t('Instructions'),
+    '#value' => '<p class="description">Import format is a comma-separated .csv file formatted as follows:
+        <br /><code>nid' . $tags . '<br />"123"' . $tag_words . '</code></p>',
+  );
+  $form['file_import']['source'] = array(
+    '#type' => 'file',
+    '#title' => t('File'),
+    '#description' => t("Upload CSV file"),
+  );
+  $form['file_import']['path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Alternatively, use a file path'),
+    '#description' => t('Enter a path in sites/default/files/ - no leading or trailing slashes.'),
+    '#default_value' => 'feeds/view-seo_toolkit_export.csv',
+    '#required' => TRUE,
+  );
+
+  $form['modifiers'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Modifiers'),
+    '#description' => t('Modify how data is handled'),
+  );
+
+  $form['modifiers']['ignore_empty_data'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Ignore empty data'),
+    '#default_value' => TRUE,
+    '#description' => t('If the import data is empty, do not override existing data'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
+  $form['submit_test'] = array(
+    '#type' => 'submit',
+    '#value' => t('Test import'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validate callback for imports.
+ */
+function seo_toolkit_nodewords_form_validate($form, &$form_state) {
+  // if error
+  // form_set_error('redirect', t('You are attempting to redirect the page to itself. This will result in an infinite loop.'));
+  if (empty($_FILES['files']['tmp_name']['source']) && trim($form_state['values']['path']) == '') {
+    form_set_error('source', t('File is required.'));
+  }
+}
+
+/**
+ * Submit handler for imports.
+ */
+function seo_toolkit_nodewords_form_submit($form, &$form_state) {
+  global $user;
+
+  if ($form_state['values']['path']) {
+    $file = $_SERVER['DOCUMENT_ROOT'] . '/sites/default/files/' . $form_state['values']['path'];
+  }
+  else {
+    // process the file
+    $file = $_FILES['files']['tmp_name']['source'];
+  }
+
+  // Not implementing this for now.
+  if ($save_imports = FALSE) {
+    $filename = 'seo_toolkit_import.csv';
+    $dest = 'seo_toolkit/import-'. time() .'-'. $filename;
+    file_save_upload($file, array(), file_directory_path() .'/'. $dest, FILE_EXISTS_REPLACE);
+  //  file_save_data($report, $file, FILE_EXISTS_REPLACE);
+  }
+  $process = FALSE;
+  switch ($form_state['clicked_button']['#value']) {
+    case t('Import'):
+      $process = TRUE;
+      break;
+    case t('Test import'):
+      $process = FALSE;
+      break;
+  }
+  $output = seo_toolkit_process_nodewords_upload($file, $process, $form_state);
+  drupal_set_message($output);
+  seo_toolkit_log('import', $user->uid, check_plain($form_state['values']['description']));
+}
+
+
+/**
+ * Do the actual file processing
+ */
+function seo_toolkit_process_nodewords_upload($file, $process = TRUE, $form_state) {
+
+  if (($handle = fopen($file, "r")) !== FALSE) {
+    $row = 0;
+    $from = 0;
+    $to = 1;
+    while (($data = fgetcsv($handle, 1000, ',')) !== FALSE) {
+      if ($row == 0) {
+       $header = array_flip($data);
+      }
+      else {
+        $output[] = $data;
+      }
+
+      // prep for import
+      if ($process) {
+
+      }
+      // prep for display
+      else {
+
+      }
+      $row++;
+    }
+    fclose($handle);
+  }
+
+  // process data
+  if ($process) {
+    $msg = seo_toolkit_process_nodewords_import($output, $header, $form_state);
+    drupal_set_message($msg['error'], $msg['status']);
+  }
+  // display as table
+  else {
+    drupal_add_js('misc/collapse.js');
+    return theme('fieldset', array(
+      '#title' => t('Test results'),
+//      '#value' => theme('table', $header, $output),
+      '#value' => seo_toolkit_process_nodewords_import($output, $header, $form_state, TRUE),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+    ));
+  }
+
+}
+
+/**
+ * function to process an array of url aliases
+ */
+function seo_toolkit_process_nodewords_import($imports, $header, $form_state, $test = FALSE) {
+
+  $settings['ignore_empty_data'] = $form_state['values']['ignore_empty_data'];
+
+  if (empty($imports)) {
+    return t('Import file is empty');
+  }
+  $dups = array();
+  $status = array(
+    'updates' => 0,
+    'deletes' => 0,
+    'imports' => 0,
+    'missing' => array(),
+  );
+
+  foreach (variable_get('seo_toolkit_supported_tags', array()) as $tag => $enabled) {
+    $supported_tags[] = $tag;
+  }
+
+  foreach ($imports as $index => $import) {
+    $node = node_load($import[0], NULL, TRUE);
+
+    if (!$node) {
+      // @TODO add error/notification.
+      $status['missing'][] = $import;
+      continue;
+    }
+
+    $tags = nodewords_load_tags(NODEWORDS_TYPE_NODE, $node->nid);
+    if (!$test && !in_array($node->nid, array_keys($dups))) {
+      // Make sure we use the entire nodewords structure.
+      $node->nodewords = $tags;
+
+      foreach ($supported_tags as $import_tag) {
+        if ($settings['ignore_empty_data'] && trim($import[$header['meta_' . $import_tag]]) != '') {
+          $node->nodewords[$import_tag]['value'] = $import[$header['meta_' . $import_tag]];
+        }
+        else if (!$settings['ignore_empty_data']) {
+          $node->nodewords[$import_tag]['value'] = $import[$header['meta_' . $import_tag]];
+        }
+      }
+      $status['updates']++;
+      node_save($node);
+    }
+
+    // Check for duplicate import entries.
+    $dups[$node->nid]++;
+
+  }
+
+  $dup_count = 0;
+  foreach ($dups as $nid => $count) {
+    if ($count > 1) {
+      $dup_count++;
+      $duplicates .= 'Node '. $nid .' has ' . $count . ' import entries<br />';
+    }
+  }
+
+  foreach ($status['missing'] as $missing) {
+    $missing_items .= '<p>Node ' . $missing[0] . ' does not exist<br /></p>';
+  }
+  $message .= '<p>Items updated: ' . $status['updates'] .'<br /></p>';
+  $message .= '<p>Items missing: ' . count($status['missing']) .'<br /></p>';
+  $message .= '<p>Duplicate nodes: ' . $dup_count .'<br /></p>';
+
+  if ($test) {
+    return $message;
+  }
+  else {
+    drupal_set_message($message . $duplicates . $missing_items);
+  }
+}
+
+
 
 function seo_toolkit_log($action, $uid, $description) {
   $seo_toolkit = new stdClass();

@@ -20,6 +20,16 @@ function seo_toolkit_menu() {
     'weight' => -10,
   );
 
+  $items['admin/settings/seo-toolkit/import-nodewords'] = array(
+    'title' => 'Import meta tags',
+    'description' => 'Import meta tags',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('seo_toolkit_nodewords_form'),
+    'access arguments' => array('administer seo toolkit'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'seo_toolkit.admin.inc',
+    'weight' => 4,
+  );
   $items['admin/settings/seo-toolkit/import'] = array(
     'title' => 'Import titles',
     'description' => 'Import titles',
@@ -44,6 +54,19 @@ function seo_toolkit_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_perm().
+ */
 function seo_toolkit_perm() {
   return array('administer seo toolkit', 'receive bacon');
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function seo_toolkit_views_api() {
+  return array(
+    'api' => '2',
+    'path' => drupal_get_path('module', 'seo_toolkit') . '/includes',
+  );
 }
